@@ -9,15 +9,94 @@ import os
 class Shoot():
     def get_start(self):
         #初始化读取标准文件
+        workbook = xlwt.Workbook(encoding='ascii')
+        worksheet = workbook.add_sheet('address')
+        workbook2 = xlrd.open_workbook(r'标准文件.xls')
+        sheet1 = workbook2.sheet_by_index(0)
+        row = sheet1.row_values(2)#从第一个小区信息表中获取小区基本信息
+
+        self.level1 = row[4]#一级地址
+        self.level2 = row[5]#二级地址
+        self.level3 = row[6]#三级地址
+        self.level4 = row[7]#四级地址
+        self.adm_coding = row[8]#单位执行编码
+        self.level5 = row[9]#五级地址
+        self.level6 = row[10]#六级
+        self.manager = row[15]#社区经理
+        self.copyman = row[19]#录入人
+        self.upnet = row[21]#上级网络
+
+        sheet2 = workbook2.sheet_by_index(2)
+        row_number = 1
+
+        self.address = []
+        while 1:
+            try:
+                row = sheet2.row_values(row_number)
+                self.address.append(row[0])
+                row_number += 1
+            except Exception as e:
+                print(e)
+                break
+
+
+    def make_staticadd(self):
+        #生成第一表
+        book = xlrd.open_workbook('标准文件.xls')
+        book2 = xlrd.open_workbook('模板.xls')
+        sheet2 = book.sheet_by_index(1)
+        row_number = 1
+
+        address = []
+        while 1:
+            try:
+                row = sheet2.row_values(row_number)
+                address.append((row[5],row[7].count('..')+1))
+                row_number += 1
+            except Exception as e:
+                print(e)
+                break
+
+        final_add = []
+        GFnumber = 3
+        for i in address:
+            for j in range(i[1]):
+                final_add.append(i[0]+'-GF{}'.format(str(GFnumber).zfill(3)))
+            GFnumber += 1
+        print(final_add)
+
+        # 复制一个excel
+        new_book = copy(book2)  # 复制了一份原来的excel
+        sheet = new_book.get_sheet(1)  # 获取到第一个sheet页
+
+        new_rownumber = 1 #从第一行开始写入新表
+        while 1:
+            try:
+                sheet.write(new_rownumber, 0, new_rownumber)  # 写入excel，第一个值是行，第二个值是列
+                sheet.write(new_rownumber, 1, self.level1)
+                sheet.write(new_rownumber, 2, self.level2)
+                sheet.write(new_rownumber, 3, self.level3)
+                sheet.write(new_rownumber, 4, self.level4)
+                sheet.write(new_rownumber, 5, self.adm_coding)
+                sheet.write(new_rownumber, 6, self.level5)
+                sheet.write(new_rownumber, 7, self.level6)
+                sheet.write(new_rownumber, 8, '/')
+                sheet.write(new_rownumber, 9, '/')
+                sheet.write(new_rownumber, 10, self.address[new_rownumber-1])
+                sheet.write(new_rownumber, 11, '')
+                sheet.write(new_rownumber, 12, '家庭场景')
+                sheet.write(new_rownumber, 13, '{}-{}'.format(self.upnet,final_add[new_rownumber-1]))
+                new_rownumber += 1
+            except Exception as e:
+                print(e)
+                break
+        new_book.save('stu_new.xls')
+
+    def make_box(self):
+        #生成箱体表
         pass
 
-    def make_device(self):
-        #生成设备名称
-        pass
 
-    def make_hub(self):
-        #生成光缆名称
-        pass
 
     def make_duan(self):
         #生成端子信息
@@ -159,5 +238,12 @@ def main():
     #put other in sheet2
     pass
 if __name__ == '__main__':
-    other2()
-    getaddress()
+    # other2()
+    # getaddress()
+    # shoot = Shoot()
+    # shoot.get_start()
+    for root,dirs,files in os.walk('test'):
+        print(files)
+
+
+
