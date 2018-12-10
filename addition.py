@@ -63,7 +63,7 @@ class Shoot():
             for j in range(i[1]):
                 final_add.append(i[0]+'-GF{}'.format(str(GFnumber).zfill(3)))
             GFnumber += 1
-        print(final_add)
+        print(set(final_add))
 
         # 复制一个excel
         new_book = copy(book2)  # 复制了一份原来的excel
@@ -94,7 +94,84 @@ class Shoot():
 
     def make_box(self):
         #生成箱体表
-        pass
+        book = xlrd.open_workbook('标准文件.xls')
+        book2 = xlrd.open_workbook('模板.xls')
+        sheet2 = book.sheet_by_index(1)
+        row_number = 1
+
+        self.GJ = sheet2.row_values(1)[0]
+
+        info = []
+        while 1:
+            #读取数据
+            try:
+                row = sheet2.row_values(row_number)
+                info.append((row[1],row[2],row[3],row[4],row[5]))
+                row_number += 1
+            except Exception as e:
+                print(e)
+                break
+
+        box_name = []#分纤箱名称
+        jd = []#经度
+        wd = []#纬度
+        add6 = []#6级地址
+        gl_name = []#光缆名称
+        duanzi = []#上联光交对应光子信息
+        box_sh = []#分纤箱芯序号
+        zsl = []#R列
+        kxsl = []#s列
+
+        GFnumber = 3
+        for i in info:
+            if i[1] != 12:
+
+                for j in range(6):
+                    box_name.append('{}-{}-GF{}'.format(self.upnet,i[4],str(GFnumber).zfill(3)))
+                    jd.append(i[3])
+                    wd.append(i[2])
+                    add6.append(i[4])
+                    gl_name.append('{}{}{}-{}{}GF{}'.format(self.upnet,self.level6,self.GJ,self.upnet,i[4],str(GFnumber).zfill(3)))
+
+                    duanzi.append('{}-{}-{}'.format(i[0][0],str(i[0][1:]).zfill(2),j+i[1]))
+                    box_sh.append(j+1)
+                    zsl.append(6)
+                    kxsl.append(6)
+                    GFnumber += 1
+
+            else:
+                for j in range(12):
+                    box_name.append('{}-{}-GF{}'.format(self.upnet, i[4], str(GFnumber).zfill(3)))
+                    jd.append(i[3])
+                    wd.append(i[2])
+                    add6.append(i[4])
+                    gl_name.append('{}{}{}-{}{}GF{}'.format(self.upnet, self.level6, self.GJ, self.upnet, i[4],
+                                                            str(GFnumber).zfill(3)))
+
+                    duanzi.append('{}-{}-{}'.format(i[0][0], str(i[0][1:]).zfill(2), j+1))
+                    box_sh.append(j + 1)
+                    zsl.append(12)
+                    kxsl.append(12)
+                    GFnumber += 1
+
+        table = []
+        number = 0
+        while 1:
+            try:
+                table.append((number,
+                              '法兰盘分纤箱',
+                              box_name[number],
+                              jd[number],
+                              wd[number],
+                              self.adm_coding,
+                              '/',
+                              self.level6,
+                              '',
+                              '',
+                              add6[number],
+                              '{}-{}-{}'.format(self.upnet,self.level6,self.GJ),
+                              gl_name[number],
+                              ))
 
 
 
@@ -240,10 +317,11 @@ def main():
 if __name__ == '__main__':
     # other2()
     # getaddress()
-    # shoot = Shoot()
-    # shoot.get_start()
-    for root,dirs,files in os.walk('test'):
-        print(files)
+    shoot = Shoot()
+    shoot.get_start()
+    shoot.make_staticadd()
+    # for root,dirs,files in os.walk('test'):
+    #     print(files)
 
 
 
