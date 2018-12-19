@@ -3,6 +3,7 @@ import xlrd
 import xlwt
 from xlutils.copy import copy
 from config import *
+from add_split import add_spliter
 
 
 class Shoot():
@@ -34,38 +35,28 @@ class Shoot():
                 row = sheet2.row_values(row_number)
                 self.address.append(row[0])
                 row_number += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
 
 
     def make_staticadd(self,new_book):
-        #生成第一表
+        #生成第标准地址
         book = xlrd.open_workbook('标准文件.xls')
-        # book2 = xlrd.open_workbook('模板.xls')
         sheet2 = book.sheet_by_index(1)
         row_number = 1
 
-        address = []
+        info = []
         while 1:
             try:
                 row = sheet2.row_values(row_number)
-                address.append((row[5],row[7].count('..')+1))
+                info.append((row[5],row[7]))
                 row_number += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
 
-        final_add = []
-        GFnumber = 3
-        for i in address:
-            for j in range(i[1]):
-                final_add.append(i[0]+'-GF{}'.format(str(GFnumber).zfill(3)))
-            GFnumber += 1
-        print(set(final_add))
+        GFnumber = GF_START
+        add_list, GF_list = add_spliter(self.upnet,GFnumber,info)
 
-        # 复制一个excel
-        # new_book = copy(book2)  # 复制了一份原来的excel
         sheet = new_book.get_sheet(1)  # 获取到第一个sheet页
 
         new_rownumber = 1 #从第一行开始写入新表
@@ -81,15 +72,13 @@ class Shoot():
                 sheet.write(new_rownumber, 7, self.level6)
                 sheet.write(new_rownumber, 8, '/')
                 sheet.write(new_rownumber, 9, '/')
-                sheet.write(new_rownumber, 10, self.address[new_rownumber-1])
+                sheet.write(new_rownumber, 10, add_list[new_rownumber-1])
                 sheet.write(new_rownumber, 11, '')
                 sheet.write(new_rownumber, 12, '家庭场景')
-                sheet.write(new_rownumber, 13, '{}-{}'.format(self.upnet,final_add[new_rownumber-1]))
+                sheet.write(new_rownumber, 13, '{}-{}'.format(self.upnet,GF_list[new_rownumber-1]))
                 new_rownumber += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
-        # new_book.save('stu_new.xls')
 
     def make_box(self,new_book):
         #生成箱体表
@@ -112,8 +101,7 @@ class Shoot():
                 row = sheet2.row_values(row_number)
                 info.append((row[1],row[2],row[3],row[4],row[5],row[10],row[0]))
                 row_number += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
 
 
@@ -130,70 +118,78 @@ class Shoot():
         kxsl = []#s列
 
 
-        GFnumber = 14
+        GFnumber = GF_START
         for i in info:
             if type(i[1]) == str:
-                #处理96芯的情况
 
                 a,b = i[1].split(',')
                 core_number = 1#分纤箱芯序号每次都是从1开始
                 for j in range(eval(a),eval(b)+1):
-                    GJ.append(i[6])#光交列表变化，需添加
-                    upGJname.append(i[5])
-                    box_name.append('{}-{}-GF{}'.format(self.upnet, i[4], str(GFnumber).zfill(3)))
-                    jd.append(i[3])
-                    wd.append(i[2])
-                    add6.append(i[4])
-                    gl_name.append('{}{}{}(96芯分纤箱)-{}{}GF{}'.format(self.upnet, self.level6, i[6], self.upnet, i[4],
-                                                            str(GFnumber).zfill(3)))
-                    duanzi.append('A-1-01-{}'.format(j))
-                    box_sh.append(core_number)
-                    zsl.append(12)
-                    kxsl.append(12)
-                    core_number += 1
-                GFnumber += 1
-                continue
-
-
-            if (i[1] == 1)|(i[1] == 7):
-
-                for j in range(6):
-                    GJ.append(i[6])
-                    upGJname.append(i[5])
-                    box_name.append('{}-{}-GF{}'.format(self.upnet,i[4],str(GFnumber).zfill(3)))
-                    jd.append(i[3])
-                    wd.append(i[2])
-                    add6.append(i[4])
-                    gl_name.append('{}{}{}-{}{}GF{}'.format(self.upnet,self.level6,i[6],self.upnet,i[4],str(GFnumber).zfill(3)))
-                    if i[0]:
-                        duanzi.append('{}-{}-{}'.format(i[0][0],str(i[0][1:]).zfill(2),j+int(i[1])))
-                    else:
-                        duanzi.append('******')
-                    box_sh.append(j+1)
-                    zsl.append(6)
-                    kxsl.append(6)
-                GFnumber += 1
-                continue
-
-            else:
-                for j in range(12):
-                    GJ.append(i[6])
-                    upGJname.append(i[5])
-                    box_name.append('{}-{}-GF{}'.format(self.upnet, i[4], str(GFnumber).zfill(3)))
+                    GJ.append(i[6])#光交列表变化，需添加  标准表0列
+                    upGJname.append(i[5])#光交名称10列
+                    box_name.append('{}-{}{}-GF{}'.format(self.upnet, self.level6, i[4], str(GFnumber).zfill(3)))
                     jd.append(i[3])
                     wd.append(i[2])
                     add6.append(i[4])
                     gl_name.append('{}{}{}-{}{}GF{}'.format(self.upnet, self.level6, i[6], self.upnet, i[4],
                                                             str(GFnumber).zfill(3)))
                     if i[0]:
-                        duanzi.append('{}-{}-{}'.format(i[0][0], str(i[0][1:]).zfill(2), j+1))
+                        '''
+                        96芯不同于普通芯
+                        端子命名不同
+                        '''
+                        a = i[0][0]#取出纤盘信息第一位A或者B
+                        b = i[0][1:]
+                        duanzi.append('{}-{}-{}'.format(a,str(b).zfill(2),j))
                     else:
-                        duanzi.append('******')
-                    box_sh.append(j + 1)
-                    zsl.append(12)
+                        duanzi.append('A-01-{}'.format(j))
+                    box_sh.append(core_number)
+                    zsl.append(12)#其中一个有变化
                     kxsl.append(12)
+                    core_number += 1
                 GFnumber += 1
                 continue
+
+
+            # if (i[1] == 1)|(i[1] == 7):
+            #
+            #     for j in range(6):
+            #         GJ.append(i[6])
+            #         upGJname.append(i[5])
+            #         box_name.append('{}-{}-GF{}'.format(self.upnet,i[4],str(GFnumber).zfill(3)))
+            #         jd.append(i[3])
+            #         wd.append(i[2])
+            #         add6.append(i[4])
+            #         gl_name.append('{}{}{}-{}{}GF{}'.format(self.upnet,self.level6,i[6],self.upnet,i[4],str(GFnumber).zfill(3)))
+            #         if i[0]:
+            #             duanzi.append('{}-{}-{}'.format(i[0][0],str(i[0][1:]).zfill(2),j+int(i[1])))
+            #         else:
+            #             duanzi.append('******')
+            #         box_sh.append(j+1)
+            #         zsl.append(6)
+            #         kxsl.append(6)
+            #     GFnumber += 1
+            #     continue
+            #
+            # else:
+            #     for j in range(12):
+            #         GJ.append(i[6])
+            #         upGJname.append(i[5])
+            #         box_name.append('{}-{}-GF{}'.format(self.upnet, i[4], str(GFnumber).zfill(3)))
+            #         jd.append(i[3])
+            #         wd.append(i[2])
+            #         add6.append(i[4])
+            #         gl_name.append('{}{}{}-{}{}GF{}'.format(self.upnet, self.level6, i[6], self.upnet, i[4],
+            #                                                 str(GFnumber).zfill(3)))
+            #         if i[0]:
+            #             duanzi.append('{}-{}-{}'.format(i[0][0], str(i[0][1:]).zfill(2), j+1))
+            #         else:
+            #             duanzi.append('******')
+            #         box_sh.append(j + 1)
+            #         zsl.append(12)
+            #         kxsl.append(12)
+            #     GFnumber += 1
+            #     continue
         table = []
         number = 0
         while 1:
@@ -234,8 +230,7 @@ class Shoot():
                               ))
                 number += 1
 
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
         sheet = new_book.get_sheet(2)  # 获取到第一个sheet页
         for i,j in enumerate(table):
@@ -267,12 +262,11 @@ class Shoot():
                 if item not in info:
                     info.append(item)
                 row_number += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
         for i in info:
             posnum = 1
-            # '''普通处理方法如下'''
+            '''普通处理方法如下'''
             # if len(i) < 6:
             #     for j in range(8):
             #         jl1j_o.append('FZHM{}-1-1-{}-虚拟分光器'.format(yj_firstname,i.replace(',','-')))
@@ -329,8 +323,7 @@ class Shoot():
                               '0000',
                               '陈浩'))
                 number += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
         sheet = new_book.get_sheet(3)  # 获取到第4个sheet页
         for i, j in enumerate(table):
@@ -356,10 +349,9 @@ class Shoot():
                 row = sheet2.row_values(row_number)
                 info.append((row[5],row[6],row[8]))
                 row_number += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
-        GFnumber = 3
+        GFnumber = GF_START
         for i in info:
             if type(i[1]) != str:
                 second_name.append('{}-{}-GF{}-二级POS001'.format(self.upnet,i[0],str(GFnumber).zfill(3)))
@@ -402,8 +394,7 @@ class Shoot():
                              '0000',
                              '陈浩'))
                 number += 1
-            except Exception as e:
-                print(e)
+            except IndexError:
                 break
         # new_book = copy(book2)
         sheet = new_book.get_sheet(4)  # 获取到第4个sheet页
@@ -420,10 +411,24 @@ class Shoot():
         new_book = copy(book2)
         #生成各列表
         self.get_start()
-        # self.make_staticadd(new_book)
-        self.make_box(new_book)
-        self.make_first(new_book)
-        # self.make_secodelight(new_book)
+        for i in WANT_TO.split(','):
+            if i == '1':
+                self.make_staticadd(new_book)
+                continue
+            if i == '2':
+                self.make_box(new_book)
+                continue
+            if i == '3':
+                self.make_first(new_book)
+                continue
+            if i == '4':
+                self.make_secodelight(new_book)
+                continue
+            else:
+                self.make_staticadd(new_book)
+                self.make_box(new_book)
+                self.make_first(new_book)
+                self.make_secodelight(new_book)
 
         #粘贴
 
@@ -436,13 +441,8 @@ class Shoot():
 
 
 if __name__ == '__main__':
-    # other2()
-    # getaddress()
     shoot = Shoot()
     shoot.main()
-    # for root,dirs,files in os.walk('test'):
-    #     print(files)
-
 
 
 
